@@ -113,7 +113,7 @@ async function handleFileComment(req) {
       },
       "title": `[${file_name}] ${(parent_id) ? 'New reply on comment' : 'New comment thread on design'}`,
       "url": `https://www.figma.com/design/${file_key}?node-id=${node_id}#${parent_id ? parent_id : comment_id}`, // node_id를 사용하여 코멘트 위치로 통하는 피그마 링크를 생성
-      "description": `${(resolved_at)} ? 'resolved at ${(resolved_at)}' : 'unsolved'`,
+      "description": `${(resolved_at) ? `resolved at ${resolved_at}` : 'unsolved'}`,
       "description": message,
       "image": {
         "url": `${(parent_id) ? 'https://media1.tenor.com/m/Be-YL9ewKnMAAAAC/diseñadorcliente4.gif' : 'https://media1.tenor.com/m/ehqokSFplPIAAAAd/design-designer.gif'}` // 이미지 (임의로 변경 가능)
