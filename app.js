@@ -11,20 +11,22 @@ const {
 } = process.env;
 
 const WEBHOOK_ENDPOINT = '/figma-event';
-const replaceWords = JSON.parse(REPLACE_WORDS);
-const replaceRegex = createRegexFromWords(replaceWords);
+const replaceWords = REPLACE_WORDS ? JSON.parse(REPLACE_WORDS) : null;
+const replaceRegex = replaceWords ? createRegexFromWords(replaceWords) : null;
 
 // 미들웨어
 app.use(express.json());
 
 // 유틸리티 함수
 function createRegexFromWords(words) {
+  if (!words || words.length === 0) return null;
   const regexStrings = words.map(wordObj => `(${wordObj.word})`);
   return new RegExp(regexStrings.join('|'), 'g');
 }
 
 // 코멘트 본문 처리 함수
 function replaceText(text) {
+  if (!replaceRegex || !replaceWords) return text;
   return text.replace(replaceRegex, match => {
     const matchedWordObj = replaceWords.find(wordObj => wordObj.word === match);
     return matchedWordObj ? matchedWordObj.replacement : match;
