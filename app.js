@@ -7,7 +7,7 @@ const {
   DISCORD_WEBHOOK_URL,
   FIGMA_API_TOKEN,
   REPLACE_WORDS, // 디스코드 멘션으로 치환할 단어 (ex: @Designer)
-  PROJECT_NAME, // 피그마 프로젝트명 (Warning: 이모지 포함 불가
+  PROJECT_NAME, // 피그마 프로젝트명 (Warning: 이모지 포함 불가)
 } = process.env;
 
 const WEBHOOK_ENDPOINT = '/figma-event';
@@ -77,7 +77,7 @@ async function getParentComment(parent_id, fileKey) {
 async function handleFileComment(req) {
   const { comment, file_name, file_key, comment_id, triggered_by, timestamp, parent_id } = req.body;
 
-  if (file_name !== PROJECT_NAME) {
+  if (PROJECT_NAME && file_name !== PROJECT_NAME) {
     return { success: false, message: 'Unknown file name', status: 400 };
   }
 
@@ -131,7 +131,7 @@ async function handleFileComment(req) {
 async function handleVersionUpdate(req) {
   const { file_name, file_key, triggered_by, description, label, timestamp } = req.body;
 
-  if (file_name !== PROJECT_NAME) {
+  if (PROJECT_NAME && file_name !== PROJECT_NAME) {
     return { success: false, message: 'Unknown file name', status: 400 };
   }
 
