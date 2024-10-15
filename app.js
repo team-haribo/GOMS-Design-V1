@@ -113,11 +113,11 @@ async function handleFileComment(req) {
       },
       "title": `[${file_name}] ${(parent_id) ? 'New reply on comment' : 'New comment thread on design'}`,
       "url": `https://www.figma.com/design/${file_key}?node-id=${node_id}#${parent_id ? parent_id : comment_id}`, // node_id를 사용하여 코멘트 위치로 통하는 피그마 링크를 생성
-      "description": message,
+      "description": `${(resolved_at) ? `resolved at ${resolved_at}` : 'unsolved'}\n${message}`,
       "image": {
         "url": `${(parent_id) ? 'https://media1.tenor.com/m/Be-YL9ewKnMAAAAC/diseñadorcliente4.gif' : 'https://media1.tenor.com/m/ehqokSFplPIAAAAd/design-designer.gif'}` // 이미지 (임의로 변경 가능)
       },
-      "timestamp": `${timestamp}\n${(resolved_at) ? `resolved at ${resolved_at}` : 'unsolved'}`,
+      "timestamp": timestamp,
       "color": `${(parent_id) ? '3244390' : '8482097'}` // 디스코드 임베드 블록 컬러 (Reply : Comment)
     }]});
     return { success: true, message: 'Notification sent', status: 200 };
