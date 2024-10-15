@@ -6,8 +6,8 @@ const app = express();
 const {
   DISCORD_WEBHOOK_URL,
   FIGMA_API_TOKEN,
-  REPLACE_WORDS, // 디스코드 멘션으로 치환할 단어 (ex: @Designer)
-  PROJECT_NAME, // 피그마 프로젝트명 (Warning: 이모지 포함 불가)
+  REPLACE_WORDS, // Optional - 디스코드 멘션으로 치환할 단어 (ex: @Designer)
+  PROJECT_NAME, // Optional - 피그마 프로젝트명 (프로젝트명에 이모지 포함 불가)
 } = process.env;
 
 const WEBHOOK_ENDPOINT = '/figma-event';
