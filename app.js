@@ -7,11 +7,10 @@ const {
   DISCORD_WEBHOOK_URL,
   FIGMA_API_TOKEN,
   REPLACE_WORDS, // 디스코드 멘션으로 치환할 단어 (ex: @Designer)
-  PROJECT_NAME, // 피그마 프로젝트명 (Warning: 이모지 포함 불가)
-  COMMENT_ENDPOINT, // event_type이 FILE_COMMENT인 웹훅의 엔드포인트
-  VERSION_ENDPOINT // event_type이 FILE_VERSION_UPDATE인 웹훅의 엔드포인트
+  PROJECT_NAME, // 피그마 프로젝트명 (Warning: 이모지 포함 불가
 } = process.env;
 
+const WEBHOOK_ENDPOINT = '/figma-event';
 const replaceWords = JSON.parse(REPLACE_WORDS);
 const replaceRegex = createRegexFromWords(replaceWords);
 
@@ -73,11 +72,11 @@ async function getParentComment(parent_id, fileKey) {
 }
 
 // 디스코드 메세지 작성 (FILE_COMMENT)
-async function handleFileComment(req, res) {
+async function handleFileComment(req) {
   const { comment, file_name, file_key, comment_id, triggered_by, timestamp, parent_id } = req.body;
 
   if (file_name !== PROJECT_NAME) {
-    return res.status(400).send('Unknown file name');
+    return { success: false, message: 'Unknown file name', status: 400 };
   }
 
   let message = "";
@@ -119,19 +118,19 @@ async function handleFileComment(req, res) {
       "timestamp": timestamp,
       "color": `${(parent_id) ? '3244390' : '8482097'}` // 디스코드 임베드 블록 컬러 (Reply : Comment)
     }]});
-    res.status(200).send('Notification sent');
+    return { success: true, message: 'Notification sent', status: 200 };
   } catch (error) {
     console.error('Error sending notification to Discord:', error.response?.data || error.message);
-    res.status(500).send('Error sending notification');
+    return { success: false, message: 'Error sending notification', status: 500 };
   }
 }
 
 // 디스코드 메세지 작성 (FILE_VERSION_UPDATE)
-async function handleVersionUpdate(req, res) {
+async function handleVersionUpdate(req) {
   const { file_name, file_key, triggered_by, description, label, timestamp } = req.body;
 
   if (file_name !== PROJECT_NAME) {
-    return res.status(400).send('Unknown file name');
+    return { success: false, message: 'Unknown file name', status: 400 };
   }
 
   try {
@@ -149,15 +148,29 @@ async function handleVersionUpdate(req, res) {
       "timestamp": timestamp,
       "color": `2379919` // 디스코드 임베드 블록 컬러
     }]});
-    res.status(200).send('Notification sent');
+    return { success: true, message: 'Notification sent', status: 200 };
   } catch (error) {
     console.error('Error sending notification to Discord:', error.response?.data || error.message);
-    res.status(500).send('Error sending notification');
+    return { success: false, message: 'Error sending notification', status: 500 };
   }
 }
 
 // 라우트
-app.post(COMMENT_ENDPOINT, handleFileComment);
-app.post(VERSION_ENDPOINT, handleVersionUpdate);
+app.post(WEBHOOK_ENDPOINT, async (req, res) => {
+  const { event_type } = req.body;
 
-module.exports = app;
+  let result;
+  switch (event_type) {
+    case 'FILE_COMMENT':
+      result = await handleFileComment(req);
+      break;
+    case 'FILE_VERSION_UPDATE':
+      result = await handleVersionUpdate(req);
+      break;
+    default:
+      res.status(400).send('Unknown event type');
+      return;
+  }
+
+  res.status(result.status).json({ success: result.success, message: result.message });
+});
