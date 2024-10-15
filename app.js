@@ -6,26 +6,27 @@ const app = express();
 const {
   DISCORD_WEBHOOK_URL,
   FIGMA_API_TOKEN,
-  REPLACE_WORDS, // 디스코드 멘션으로 치환할 단어 (ex: @Designer)
-  PROJECT_NAME, // 피그마 프로젝트명 (Warning: 이모지 포함 불가)
-  COMMENT_ENDPOINT, // event_type이 FILE_COMMENT인 웹훅의 엔드포인트
-  VERSION_ENDPOINT // event_type이 FILE_VERSION_UPDATE인 웹훅의 엔드포인트
+  REPLACE_WORDS, // Optional - 디스코드 멘션으로 치환할 단어 (ex: @Designer)
+  PROJECT_NAME, // Optional - 피그마 프로젝트명 (미입력 시 팀 내 모든 이벤트를 수신)
 } = process.env;
 
-const replaceWords = JSON.parse(REPLACE_WORDS);
-const replaceRegex = createRegexFromWords(replaceWords);
+const WEBHOOK_ENDPOINT = '/figma-event';
+const replaceWords = REPLACE_WORDS ? JSON.parse(REPLACE_WORDS) : null;
+const replaceRegex = replaceWords ? createRegexFromWords(replaceWords) : null;
 
 // 미들웨어
 app.use(express.json());
 
 // 유틸리티 함수
 function createRegexFromWords(words) {
+  if (!words || words.length === 0) return null;
   const regexStrings = words.map(wordObj => `(${wordObj.word})`);
   return new RegExp(regexStrings.join('|'), 'g');
 }
 
 // 코멘트 본문 처리 함수
 function replaceText(text) {
+  if (!replaceRegex || !replaceWords) return text;
   return text.replace(replaceRegex, match => {
     const matchedWordObj = replaceWords.find(wordObj => wordObj.word === match);
     return matchedWordObj ? matchedWordObj.replacement : match;
@@ -73,11 +74,12 @@ async function getParentComment(parent_id, fileKey) {
 }
 
 // 디스코드 메세지 작성 (FILE_COMMENT)
-async function handleFileComment(req, res) {
+async function handleFileComment(req) {
   const { comment, file_name, file_key, comment_id, triggered_by, timestamp, parent_id } = req.body;
 
-  if (file_name !== PROJECT_NAME) {
-    return res.status(400).send('Unknown file name');
+  if (PROJECT_NAME && file_name !== PROJECT_NAME) {
+    console.error('This project is not included in the list.')
+    return { success: false, message: 'Unknown file name', status: 400 };
   }
 
   let message = "";
@@ -117,21 +119,24 @@ async function handleFileComment(req, res) {
         "url": `${(parent_id) ? 'https://media1.tenor.com/m/Be-YL9ewKnMAAAAC/diseñadorcliente4.gif' : 'https://media1.tenor.com/m/ehqokSFplPIAAAAd/design-designer.gif'}` // 이미지 (임의로 변경 가능)
       },
       "timestamp": timestamp,
+      "footer": {
+        "text": file_name
+      },
       "color": `${(parent_id) ? '3244390' : '8482097'}` // 디스코드 임베드 블록 컬러 (Reply : Comment)
     }]});
-    res.status(200).send('Notification sent');
+    return { success: true, message: 'Notification sent', status: 200 };
   } catch (error) {
     console.error('Error sending notification to Discord:', error.response?.data || error.message);
-    res.status(500).send('Error sending notification');
+    return { success: false, message: 'Error sending notification', status: 500 };
   }
 }
 
 // 디스코드 메세지 작성 (FILE_VERSION_UPDATE)
-async function handleVersionUpdate(req, res) {
+async function handleVersionUpdate(req) {
   const { file_name, file_key, triggered_by, description, label, timestamp } = req.body;
 
-  if (file_name !== PROJECT_NAME) {
-    return res.status(400).send('Unknown file name');
+  if (PROJECT_NAME && file_name !== PROJECT_NAME) {
+    return { success: false, message: 'Unknown file name', status: 400 };
   }
 
   try {
@@ -149,15 +154,31 @@ async function handleVersionUpdate(req, res) {
       "timestamp": timestamp,
       "color": `2379919` // 디스코드 임베드 블록 컬러
     }]});
-    res.status(200).send('Notification sent');
+    return { success: true, message: 'Notification sent', status: 200 };
   } catch (error) {
     console.error('Error sending notification to Discord:', error.response?.data || error.message);
-    res.status(500).send('Error sending notification');
+    return { success: false, message: 'Error sending notification', status: 500 };
   }
 }
 
 // 라우트
-app.post(COMMENT_ENDPOINT, handleFileComment);
-app.post(VERSION_ENDPOINT, handleVersionUpdate);
+app.post(WEBHOOK_ENDPOINT, async (req, res) => {
+  const { event_type } = req.body;
+
+  let result;
+  switch (event_type) {
+    case 'FILE_COMMENT':
+      result = await handleFileComment(req);
+      break;
+    case 'FILE_VERSION_UPDATE':
+      result = await handleVersionUpdate(req);
+      break;
+    default:
+      res.status(400).send('Unknown event type');
+      return;
+  }
+
+  res.status(result.status).json({ success: result.success, message: result.message });
+});
 
 module.exports = app;
