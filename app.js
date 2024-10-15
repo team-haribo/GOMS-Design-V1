@@ -176,3 +176,5 @@ app.post(WEBHOOK_ENDPOINT, async (req, res) => {
 
   res.status(result.status).json({ success: result.success, message: result.message });
 });
+
+module.exports = app;
