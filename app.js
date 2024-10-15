@@ -7,7 +7,7 @@ const {
   DISCORD_WEBHOOK_URL,
   FIGMA_API_TOKEN,
   REPLACE_WORDS, // Optional - 디스코드 멘션으로 치환할 단어 (ex: @Designer)
-  PROJECT_NAME, // Optional - 피그마 프로젝트명 (프로젝트명에 이모지 포함 불가)
+  PROJECT_NAME, // Optional - 피그마 프로젝트명 (미입력 시 팀 내 모든 이벤트를 수신)
 } = process.env;
 
 const WEBHOOK_ENDPOINT = '/figma-event';
@@ -75,9 +75,10 @@ async function getParentComment(parent_id, fileKey) {
 
 // 디스코드 메세지 작성 (FILE_COMMENT)
 async function handleFileComment(req) {
-  const { comment, file_name, file_key, comment_id, resolved_at, triggered_by, timestamp, parent_id } = req.body;
+  const { comment, file_name, file_key, comment_id, triggered_by, timestamp, parent_id } = req.body;
 
   if (PROJECT_NAME && file_name !== PROJECT_NAME) {
+    console.error('This project is not included in the list.')
     return { success: false, message: 'Unknown file name', status: 400 };
   }
 
@@ -113,11 +114,14 @@ async function handleFileComment(req) {
       },
       "title": `[${file_name}] ${(parent_id) ? 'New reply on comment' : 'New comment thread on design'}`,
       "url": `https://www.figma.com/design/${file_key}?node-id=${node_id}#${parent_id ? parent_id : comment_id}`, // node_id를 사용하여 코멘트 위치로 통하는 피그마 링크를 생성
-      "description": `${(resolved_at) ? `resolved at ${resolved_at}` : 'unsolved'}\n${message}`,
+      "description": message,
       "image": {
         "url": `${(parent_id) ? 'https://media1.tenor.com/m/Be-YL9ewKnMAAAAC/diseñadorcliente4.gif' : 'https://media1.tenor.com/m/ehqokSFplPIAAAAd/design-designer.gif'}` // 이미지 (임의로 변경 가능)
       },
       "timestamp": timestamp,
+      "footer": {
+        "text": file_name
+      },
       "color": `${(parent_id) ? '3244390' : '8482097'}` // 디스코드 임베드 블록 컬러 (Reply : Comment)
     }]});
     return { success: true, message: 'Notification sent', status: 200 };
