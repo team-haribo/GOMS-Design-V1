@@ -107,23 +107,25 @@ async function handleFileComment(req) {
   }
 
   try {
-    await axios.post(DISCORD_WEBHOOK_URL, { embeds: [{ // 임베드 형식으로 디스코드 메세지를 작성
-      "author": {
-        "name": triggered_by.handle,
-        "icon_url": triggered_by.img_url
-      },
-      "title": `[${file_name}] ${(parent_id) ? 'New reply on comment' : 'New comment thread on design'}`,
-      "url": `https://www.figma.com/design/${file_key}?node-id=${node_id}#${parent_id ? parent_id : comment_id}`, // node_id를 사용하여 코멘트 위치로 통하는 피그마 링크를 생성
-      "description": message,
-      "image": {
-        "url": `${(parent_id) ? 'https://media1.tenor.com/m/Be-YL9ewKnMAAAAC/diseñadorcliente4.gif' : 'https://media1.tenor.com/m/ehqokSFplPIAAAAd/design-designer.gif'}` // 이미지 (임의로 변경 가능)
-      },
-      "timestamp": timestamp,
-      "footer": {
-        "text": file_name
-      },
-      "color": `${(parent_id) ? '3244390' : '8482097'}` // 디스코드 임베드 블록 컬러 (Reply : Comment)
-    }]});
+    await axios.post(DISCORD_WEBHOOK_URL, {
+      embeds: [{ // 임베드 형식으로 디스코드 메세지를 작성
+        "author": {
+          "name": triggered_by.handle,
+          "icon_url": triggered_by.img_url
+        },
+        "title": `[${file_name}] ${(parent_id) ? 'New reply on comment' : 'New comment thread on design'}`,
+        "url": `https://www.figma.com/design/${file_key}?node-id=${node_id}#${parent_id ? parent_id : comment_id}`, // node_id를 사용하여 코멘트 위치로 통하는 피그마 링크를 생성
+        "description": message,
+        "image": {
+          "url": `${(parent_id) ? 'https://media1.tenor.com/m/Be-YL9ewKnMAAAAC/diseñadorcliente4.gif' : 'https://media1.tenor.com/m/ehqokSFplPIAAAAd/design-designer.gif'}` // 이미지 (임의로 변경 가능)
+        },
+        "timestamp": timestamp,
+        "footer": {
+          "text": file_name
+        },
+        "color": `${(parent_id) ? '3244390' : '8482097'}` // 디스코드 임베드 블록 컬러 (Reply : Comment)
+      }]
+    });
     return { success: true, message: 'Notification sent', status: 200 };
   } catch (error) {
     console.error('Error sending notification to Discord:', error.response?.data || error.message);
@@ -140,20 +142,22 @@ async function handleVersionUpdate(req) {
   }
 
   try {
-    await axios.post(DISCORD_WEBHOOK_URL, { embeds: [{
-      "author": {
-        "name": triggered_by.handle,
-        "icon_url": triggered_by.img_url
-      },
-      "title": `[${file_name}] **New version update on design: ${label}**`,
-      "url": `https://www.figma.com/design/${file_key}/%F0%9F%8C%A7%EF%B8%8F-ON%C2%B0C`, // 위치 정보가 필요 없으므로 getNodeId 없이 링크 생성
-      "description": `>>> ${description}`,
-      "image": {
-        "url": "https://i.namu.wiki/i/vcPIh-2LKgTCpeKuzLpVs1uGs9RHtZDezU438Wk5za0W18Zf_A9k7OO9kAz4yzWW31KjB2Talrzbldmvjv5KGw.gif" // 이미지 (임의로 변경 가능)
-      },
-      "timestamp": timestamp,
-      "color": `2379919` // 디스코드 임베드 블록 컬러
-    }]});
+    await axios.post(DISCORD_WEBHOOK_URL, {
+      embeds: [{
+        "author": {
+          "name": triggered_by.handle,
+          "icon_url": triggered_by.img_url
+        },
+        "title": `[${file_name}] **New version update on design: ${label}**`,
+        "url": `https://www.figma.com/design/${file_key}/%F0%9F%8C%A7%EF%B8%8F-ON%C2%B0C`, // 위치 정보가 필요 없으므로 getNodeId 없이 링크 생성
+        "description": `>>> ${description}`,
+        "image": {
+          "url": "https://i.namu.wiki/i/vcPIh-2LKgTCpeKuzLpVs1uGs9RHtZDezU438Wk5za0W18Zf_A9k7OO9kAz4yzWW31KjB2Talrzbldmvjv5KGw.gif" // 이미지 (임의로 변경 가능)
+        },
+        "timestamp": timestamp,
+        "color": `2379919` // 디스코드 임베드 블록 컬러
+      }]
+    });
     return { success: true, message: 'Notification sent', status: 200 };
   } catch (error) {
     console.error('Error sending notification to Discord:', error.response?.data || error.message);
