@@ -86,7 +86,7 @@ async function handleFileComment(req) {
 
   if (parent_id) {
     const parentComment = await getParentComment(parent_id, file_key);
-    message += `>>> \`${replaceText(parentComment)}\`\n\n`;
+    message += `>>> \`${parentComment}\`\n\n`;
   }
 
   if (Array.isArray(comment)) {
