@@ -12,7 +12,7 @@ const {
 
 const WEBHOOK_ENDPOINT = '/figma-event';
 const replaceWords = REPLACE_WORDS ? JSON.parse(REPLACE_WORDS) : null;
-const replaceRegex = replaceWords ? createRegexFromWords(replaceWords) : null;
+const replaceRegex = REPLACE_WORDS ? createRegexFromWords(REPLACE_WORDS) : null;
 
 // 미들웨어
 app.use(express.json());
@@ -20,16 +20,16 @@ app.use(express.json());
 // 유틸리티 함수
 function createRegexFromWords(words) {
   if (!words || words.length === 0) return null;
-  const regexStrings = words.map(wordObj => `(${wordObj.word})`);
-  return new RegExp(regexStrings.join('|'), 'g');
+  const regexStrings = words.flatMap(group => group.words.map(word => `(${word})`));
+  return new RegExp(regexStrings.join('|'), 'gi');
 }
 
-// 코멘트 본문 처리 함수
+// 멘션 처리 함수
 function replaceText(text) {
-  if (!replaceRegex || !replaceWords) return text;
+  if (!replaceRegex || !REPLACE_WORDS) return text;
   return text.replace(replaceRegex, match => {
-    const matchedWordObj = replaceWords.find(wordObj => wordObj.word === match);
-    return matchedWordObj ? matchedWordObj.replacement : match;
+    const group = REPLACE_WORDS.find(g => g.words.includes(match.toLowerCase()));
+    return group ? group.replacement : match;
   });
 }
 
@@ -103,6 +103,7 @@ async function handleFileComment(req) {
 
   const node_id = await getNodeIdFromComment(parent_id == "" ? comment_id : parent_id, file_key); // Reply의 경우 parent의 node_id를 가져와야 하므로 parent_id를 사용해서 getNodeId
   if (!node_id) {
+    console.error('Node ID not found');
     return res.status(404).json({ success: false, message: 'Node ID not found' });
   }
 
